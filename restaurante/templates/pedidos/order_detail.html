@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Detalle del Pedido #{{ pedido.id }}</h1>
+
+<div class="mb-3">
+  <strong>Fecha:</strong> {{ pedido.fecha|date:"d/m/Y H:i" }}<br>
+  <strong>Tipo:</strong> {{ pedido.get_tipo_display }}<br>
+  {% if pedido.tipo == 'MESA' %}
+    <strong>Mesa:</strong> {{ pedido.mesa }}<br>
+  {% endif %}
+  <strong>Cliente:</strong> {{ pedido.cliente_nombre|default:"-" }}<br>
+  
+</div>
+
+<h4>Productos</h4>
+
+<table class="table table-bordered table-sm">
+  <thead class="table-light">
+    <tr>
+      <th>Producto</th>
+      <th>Cantidad</th>
+      <th>Precio unitario</th>
+      <th>Subtotal</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for detalle in pedido.detalles.all %}
+      <tr>
+        <td>{{ detalle.producto.nombre }}</td>
+        <td>{{ detalle.cantidad }}</td>
+        <td>{{ detalle.precio_unitario }} Bs.</td>
+        <td>{{ detalle.subtotal }} Bs.</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="3" class="text-end fw-bold">TOTAL:</td>
+      <td class="fw-bold">{{ pedido.total }} Bs.</td>
+    </tr>
+  </tfoot>
+</table>
+
+<a href="{% url 'lista_pedidos' %}" class="btn btn-secondary">
+  <i class="bi bi-arrow-left"></i> Volver a pedidos
+</a>
+
+{% endblock %}
