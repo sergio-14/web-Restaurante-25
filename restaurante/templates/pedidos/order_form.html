@@ -12,7 +12,7 @@
   {% endfor %}
 {% endif %}
 
-<form method="post" novalidate>
+<form method="post" novalidate id="pedido-form">
   {% csrf_token %}
 
   <div class="row mb-3">
@@ -60,11 +60,12 @@
         <th style="width: 15%;">Eliminar</th>
       </tr>
     </thead>
-    <tbody>
+    <tbody id="detalles-tbody">
       {% for form in formset %}
-        <tr class="detalle-row">
+        <tr class="detalle-row" data-form-index="{{ forloop.counter0 }}">
           <td>
-            <select name="{{ form.producto.html_name }}" class="form-control producto-select">
+            {{ form.id }}
+            <select name="{{ form.producto.html_name }}" id="id_{{ form.producto.html_name }}" class="form-control producto-select">
               <option value="">---------</option>
               {% for p in productos %}
                 <option value="{{ p.id }}" data-precio="{{ p.precio }}"
@@ -73,11 +74,17 @@
                 </option>
               {% endfor %}
             </select>
-            {{ form.id }}
+            {% if form.producto.errors %}<div class="text-danger small">{{ form.producto.errors }}</div>{% endif %}
           </td>
-          <td>{{ form.cantidad }}</td>
-          <td>{{ form.precio_unitario }}</td>
-          <td class="subtotal-cell align-middle">$0.00</td>
+          <td>
+            {{ form.cantidad }}
+            {% if form.cantidad.errors %}<div class="text-danger small">{{ form.cantidad.errors }}</div>{% endif %}
+          </td>
+          <td>
+            {{ form.precio_unitario }}
+            {% if form.precio_unitario.errors %}<div class="text-danger small">{{ form.precio_unitario.errors }}</div>{% endif %}
+          </td>
+          <td class="subtotal-cell align-middle">Bs0.00</td>
           <td class="text-center">{{ form.DELETE }}</td>
         </tr>
       {% endfor %}
@@ -85,7 +92,7 @@
     <tfoot>
       <tr>
         <td colspan="3" class="text-end fw-bold">TOTAL:</td>
-        <td colspan="2" class="fw-bold" id="total-general">$0.00</td>
+        <td colspan="2" class="fw-bold" id="total-general">Bs0.00</td>
       </tr>
     </tfoot>
   </table>
@@ -102,30 +109,32 @@
   </div>
 </form>
 
-<!-- Fila vacía oculta para JS -->
+<!-- Fila vacía oculta para JS — usa formset.prefix para mantener consistencia -->
 <table style="display:none">
   <tbody>
-    <tr id="empty-row">
+    <tr id="empty-row" class="detalle-row">
       <td>
-        <select class="form-control producto-select">
+        <input type="hidden" name="{{ formset.prefix }}-__prefix__-id" id="id_{{ formset.prefix }}-__prefix__-id" value="">
+        <select name="{{ formset.prefix }}-__prefix__-producto" id="id_{{ formset.prefix }}-__prefix__-producto" class="form-control producto-select">
           <option value="">---------</option>
           {% for p in productos %}
             <option value="{{ p.id }}" data-precio="{{ p.precio }}">{{ p.nombre }} — {{ p.precio }} Bs.</option>
           {% endfor %}
         </select>
-        <input type="hidden" name="detallepedido_set-__prefix__-id" value="">
       </td>
-      <td><input type="number" name="detallepedido_set-__prefix__-cantidad" class="form-control" min="1"></td>
-      <td><input type="number" name="detallepedido_set-__prefix__-precio_unitario" class="form-control" step="0.01"></td>
-      <td class="subtotal-cell">0.00Bs</td>
-      <td class="text-center"><input type="checkbox" name="detallepedido_set-__prefix__-DELETE"></td>
+      <td><input type="number" name="{{ formset.prefix }}-__prefix__-cantidad" id="id_{{ formset.prefix }}-__prefix__-cantidad" class="form-control" min="1" value="1"></td>
+      <td><input type="number" name="{{ formset.prefix }}-__prefix__-precio_unitario" id="id_{{ formset.prefix }}-__prefix__-precio_unitario" class="form-control" step="0.01" value="0"></td>
+      <td class="subtotal-cell align-middle">Bs0.00</td>
+      <td class="text-center"><input type="checkbox" name="{{ formset.prefix }}-__prefix__-DELETE" id="id_{{ formset.prefix }}-__prefix__-DELETE"></td>
     </tr>
   </tbody>
 </table>
 
 <script>
+
+
 function parseFloatSafe(v){
-  v = String(v).replace(',', '.');
+  v = String(v ?? '').replace(',', '.');
   var n = parseFloat(v);
   return isNaN(n) ? 0 : n;
 }
@@ -136,38 +145,95 @@ function actualizarSubtotal(row){
   if(!cantidadInput || !precioInput) return;
   var cantidad = parseFloatSafe(cantidadInput.value);
   var precio = parseFloatSafe(precioInput.value);
-  row.querySelector('.subtotal-cell').textContent = 'Bs' + (cantidad*precio).toFixed(2);
+  var subtotal = cantidad * precio;
+  var cell = row.querySelector('.subtotal-cell');
+  if(cell) cell.textContent = 'Bs' + subtotal.toFixed(2);
   actualizarTotal();
 }
 
 function actualizarTotal(){
   var total = 0;
   document.querySelectorAll('.detalle-row').forEach(function(row){
+    if(row.id === 'empty-row') return;
     var deleteCheckbox = row.querySelector('[name$="-DELETE"]');
     if(deleteCheckbox && deleteCheckbox.checked) return;
-    var cantidad = parseFloatSafe(row.querySelector('[name$="-cantidad"]').value);
-    var precio = parseFloatSafe(row.querySelector('[name$="-precio_unitario"]').value);
-    total += cantidad * precio;
+    var cantidadInput = row.querySelector('[name$="-cantidad"]');
+    var precioInput = row.querySelector('[name$="-precio_unitario"]');
+    if(!cantidadInput || !precioInput) return;
+    total += parseFloatSafe(cantidadInput.value) * parseFloatSafe(precioInput.value);
   });
-  document.getElementById('total-general').textContent = 'Bs' + total.toFixed(2);
+  var totalEl = document.getElementById('total-general');
+  if(totalEl) totalEl.textContent = 'Bs' + total.toFixed(2);
 }
 
-// Actualiza subtotales al cambiar cantidad o precio
+function getManagementInputs() {
+  var prefix = "{{ formset.prefix }}";
+  return {
+    prefix: prefix,
+    TOTAL_FORMS: document.querySelector('input[name="'+prefix+'-TOTAL_FORMS"]'),
+    INITIAL_FORMS: document.querySelector('input[name="'+prefix+'-INITIAL_FORMS"]'),
+    MIN_NUM_FORMS: document.querySelector('input[name="'+prefix+'-MIN_NUM_FORMS"]'),
+    MAX_NUM_FORMS: document.querySelector('input[name="'+prefix+'-MAX_NUM_FORMS"]')
+  };
+}
+
+document.getElementById('add-product').addEventListener('click', function(){
+  const mg = getManagementInputs();
+  if(!mg.TOTAL_FORMS) {
+    alert('Error: no se encontró TOTAL_FORMS en el formulario.');
+    return;
+  }
+
+  const emptyRow = document.querySelector('#empty-row');
+  const tbody = document.getElementById('detalles-tbody');
+  if(!emptyRow || !tbody) return;
+
+  let formIndex = parseInt(mg.TOTAL_FORMS.value, 10);
+  const newRow = emptyRow.cloneNode(true);
+
+  newRow.removeAttribute('id');
+  newRow.classList.add('detalle-row');
+  newRow.setAttribute('data-form-index', formIndex);
+
+  newRow.querySelectorAll('input, select').forEach(function(el){
+    if(el.name) el.name = el.name.replace(/__prefix__/g, formIndex);
+    if(el.id) el.id = el.id.replace(/__prefix__/g, formIndex);
+
+    if(el.tagName === 'INPUT' && el.type !== 'hidden' && el.type !== 'checkbox') {
+      if(el.name.includes('-cantidad')) el.value = '1';
+      else if(el.name.includes('-precio_unitario')) el.value = '0';
+      else el.value = '';
+    }
+    if(el.tagName === 'INPUT' && el.type === 'checkbox') el.checked = false;
+    if(el.tagName === 'SELECT') el.selectedIndex = 0;
+  });
+
+  tbody.appendChild(newRow);
+  mg.TOTAL_FORMS.value = formIndex + 1;
+  actualizarSubtotal(newRow);
+});
+
 document.addEventListener('input', function(e){
   if(e.target.matches('[name$="-cantidad"], [name$="-precio_unitario"]')){
-    actualizarSubtotal(e.target.closest('.detalle-row'));
+    var row = e.target.closest('.detalle-row');
+    if(row && row.id !== 'empty-row') actualizarSubtotal(row);
   }
 });
 
-// Cuando cambia producto o DELETE
 document.addEventListener('change', function(e){
   if(e.target.matches('[name$="-producto"]')){
     var sel = e.target;
-    var precio = sel.options[sel.selectedIndex].dataset.precio;
+    var selectedOption = sel.options[sel.selectedIndex];
+    var precio = selectedOption ? selectedOption.dataset.precio : null;
     if(precio){
       var row = sel.closest('.detalle-row');
-      row.querySelector('[name$="-precio_unitario"]').value = precio;
-      actualizarSubtotal(row);
+      if(row && row.id !== 'empty-row'){
+        var precioInput = row.querySelector('[name$="-precio_unitario"]');
+        if(precioInput) {
+          precioInput.value = precio;
+          actualizarSubtotal(row);
+        }
+      }
     }
   }
   if(e.target.matches('[name$="-DELETE"]')){
@@ -175,30 +241,27 @@ document.addEventListener('change', function(e){
   }
 });
 
-// Inicializa subtotales al cargar
 document.addEventListener('DOMContentLoaded', function(){
-  document.querySelectorAll('.detalle-row').forEach(actualizarSubtotal);
+  document.querySelectorAll('.detalle-row').forEach(function(row){
+    if(row.id !== 'empty-row') actualizarSubtotal(row);
+  });
 });
 
-// Botón agregar producto
-document.getElementById('add-product').addEventListener('click', function(){
-  const totalForms = document.querySelector('input[name$="-TOTAL_FORMS"]');
-  const emptyRow = document.querySelector('#empty-row');
-  const newRow = emptyRow.cloneNode(true);
-  let formIndex = parseInt(totalForms.value);
+document.getElementById('pedido-form').addEventListener('submit', function(){
+  const mg = getManagementInputs();
+  if(!mg.TOTAL_FORMS) return;
 
-  newRow.removeAttribute('id');
-  newRow.style.display = '';
-  newRow.querySelectorAll('input, select').forEach(function(el){
-    if(el.name) el.name = el.name.replace('__prefix__', formIndex);
-    if(el.id) el.id = el.id.replace('__prefix__', formIndex);
-    if(el.tagName==='INPUT') el.value = '';
-    if(el.tagName==='SELECT') el.selectedIndex=0;
+  var filas = Array.from(document.querySelectorAll('.detalle-row')).filter(function(r){ return r.id !== 'empty-row'; });
+
+  filas.forEach(function(row, idx){
+    row.setAttribute('data-form-index', idx);
+    row.querySelectorAll('input, select').forEach(function(el){
+      if(el.name) el.name = el.name.replace(/(\d+|__prefix__)/g, idx);
+      if(el.id) el.id = el.id.replace(/(\d+|__prefix__)/g, idx);
+    });
   });
 
-  document.querySelector('#detalles-table tbody').appendChild(newRow);
-  totalForms.value = formIndex + 1;
+  mg.TOTAL_FORMS.value = filas.length;
 });
 </script>
-
 {% endblock %}

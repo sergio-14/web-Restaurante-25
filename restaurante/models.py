@@ -56,8 +56,10 @@ class Pedido(models.Model):
         verbose_name = _("Pedido")
         verbose_name_plural = _("Pedidos")
 
+    
     def __str__(self):
-        return f"Pedido #{self.id} - {self.fecha.strftime('%Y-%m-%d %H:%M')}"
+        fecha_str = self.fecha.strftime('%Y-%m-%d %H:%M') if getattr(self, 'fecha', None) else 'sin fecha'
+        return f"Pedido #{self.id if getattr(self, 'id', None) else 'sin id'} - {fecha_str}"
 
     @property
     def total(self):

@@ -1,11 +1,28 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Crear Producto</h1>
+
+<h1>{% if is_editing %}Editar Producto: {{ producto.nombre }}{% else %}Crear Producto{% endif %}</h1>
 
 <form method="post">
     {% csrf_token %}
+    
     {{ form.as_p }}
-    <button type="submit" class="btn btn-success">Guardar</button>
-    <a href="{% url 'lista_productos' %}" class="btn btn-secondary">Cancelar</a>
+    
+    <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Guardar Cambios
+        </button>
+        
+        <a href="{% url 'lista_productos' %}" class="btn btn-secondary">
+            Cancelar
+        </a>
+        
+        {% if is_editing %}
+            <a href="{% url 'eliminar_producto' producto.pk %}" class="btn btn-danger ms-auto">
+                <i class="bi bi-trash"></i> Eliminar Producto
+            </a>
+        {% endif %}
+    </div>
 </form>
+
 {% endblock %}

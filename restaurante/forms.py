@@ -2,10 +2,7 @@ from decimal import Decimal
 from django import forms
 from django.forms import inlineformset_factory
 from django.core.exceptions import ValidationError
-from .models import Pedido, DetallePedido, Producto
-
-from django import forms
-from .models import Categoria, Producto
+from .models import Pedido, DetallePedido, Producto, Categoria
 
 class CategoriaForm(forms.ModelForm):
     class Meta:
@@ -26,7 +23,6 @@ class ProductoForm(forms.ModelForm):
             'precio': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
-
 
 class PedidoForm(forms.ModelForm):
     class Meta:
@@ -58,31 +54,61 @@ class DetallePedidoForm(forms.ModelForm):
             'precio_unitario': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+   
+        self.fields['producto'].required = False
+        self.fields['cantidad'].required = False
+        self.fields['precio_unitario'].required = False
+
     def clean(self):
         cleaned = super().clean()
         producto = cleaned.get('producto')
         precio_unitario = cleaned.get('precio_unitario')
-        cantidad = cleaned.get('cantidad') or 1
+        cantidad = cleaned.get('cantidad')
 
+       
         if not producto:
-            raise ValidationError("Seleccione un producto.")
+            
+            if cantidad or precio_unitario:
+                raise ValidationError("Debe seleccionar un producto.")
+     
+            return cleaned
 
-        if precio_unitario is None or Decimal(precio_unitario) == Decimal('0'):
-           
-            cleaned['precio_unitario'] = producto.precio
-
-      
-        if cantidad <= 0:
+        if not cantidad or cantidad <= 0:
             raise ValidationError("La cantidad debe ser mayor que cero.")
 
+      
+        if precio_unitario is None or Decimal(precio_unitario) == Decimal('0'):
+            cleaned['precio_unitario'] = producto.precio
+
         return cleaned
+
+class DetallePedidoBaseFormSet(forms.BaseInlineFormSet):
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+        
+        
+        formularios_validos = 0
+        for form in self.forms:
+            if self.can_delete and self._should_delete_form(form):
+                continue
+          
+            if form.cleaned_data.get('producto'):
+                formularios_validos += 1
+        
+        if formularios_validos < 1:
+            raise ValidationError('Debe agregar al menos un producto al pedido.')
+
 
 DetallePedidoFormSet = inlineformset_factory(
     Pedido,
     DetallePedido,
     form=DetallePedidoForm,
+    formset=DetallePedidoBaseFormSet,
     extra=1,
     can_delete=True,
-    min_num=1,
-    validate_min=True
+    validate_min=False,  
 )
