@@ -1,35 +1,121 @@
 {% extends "base.html" %}
 {% block content %}
+
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, var(--mirage) 0%, #1c2d35 100%);
+        border-radius: 20px;
+        padding: 4rem 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Adorno sutil de fondo */
+    .hero-section::after {
+        content: "";
+        position: absolute;
+        top: -50px;
+        right: -50px;
+        width: 200px;
+        height: 200px;
+        background: var(--blaze-orange);
+        filter: blur(80px);
+        opacity: 0.2;
+    }
+
+    .welcome-text {
+        color: var(--blaze-orange);
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+    }
+
+    .restaurant-name {
+        font-family: 'Playfair Display', serif; /* Si tienes una fuente elegante, si no, Georgia */
+        color: white;
+        font-size: 3.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-card {
+        border: none;
+        border-radius: 15px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        background: white;
+        height: 100%;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    }
+
+    .icon-box {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .bg-orange-light { background-color: rgba(255, 91, 4, 0.1); color: var(--blaze-orange); }
+    .bg-sea-light { background-color: rgba(7, 80, 86, 0.1); color: var(--deep-sea-green); }
+    .bg-mirage-light { background-color: rgba(22, 35, 42, 0.1); color: var(--mirage); }
+
+    .btn-custom {
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: 0.3s;
+    }
+</style>
+
+<div class="container py-4">
     
-<div class="p-5 mb-4 bg-light rounded-3 shadow-sm">
-    <div class="container-fluid py-5">
-        
-        <h1 class="display-5 fw-bold text-dark mb-3">
-            ✨ Sistema de Gestión de Pedidos y Servicio
-        </h1>
-        
-        <p class="fs-4 text-muted border-bottom pb-3 mb-4">
-            **Bienvenido a tu Restaurante **. donde nos esmeramos para que quedes satisfecho .
-        </p>
-        
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <h3 class="h5 fw-semibold text-primary">Órdenes Rápidas</h3>
-                <p class="text-secondary small">Registro ágil de pedidos en mesa o para llevar.</p>
-            </div>
-            <div class="col-md-4">
-                <h3 class="h5 fw-semibold text-success">Control de Inventario</h3>
-                <p class="text-secondary small">Integración para mantener tus productos al día.</p>
-            </div>
-            <div class="col-md-4">
-                <h3 class="h5 fw-semibold text-danger">Servicio Superior</h3>
-                <p class="text-secondary small">Mejora los tiempos de entrega y la satisfacción del cliente.</p>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card dashboard-card p-4 shadow-sm">
+                <div class="icon-box bg-orange-light">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                </div>
+                <h3 class="h5 fw-bold" style="color: var(--mirage);">Órdenes Rápidas</h3>
+                <p class="text-muted small mb-4">Registro ágil de pedidos en mesa o para llevar con cálculo automático de totales.</p>
+                <a href="{% url 'lista_pedidos' %}" class="stretched-link text-decoration-none" style="color: var(--blaze-orange);">
+                    Ir a Pedidos <i class="bi bi-arrow-right ms-1"></i>
+                </a>
             </div>
         </div>
-        
-       
-        
+
+        <div class="col-md-4">
+            <div class="card dashboard-card p-4 shadow-sm">
+                <div class="icon-box bg-sea-light">
+                    <i class="bi bi-box-seam-fill"></i>
+                </div>
+                <h3 class="h5 fw-bold" style="color: var(--mirage);">Control de Menú</h3>
+                <p class="text-muted small mb-4">Actualiza precios, nombres y categorías de tus platos de forma instantánea.</p>
+                <a href="{% url 'lista_productos' %}" class="stretched-link text-decoration-none" style="color: var(--deep-sea-green);">
+                    Gestionar Productos <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card dashboard-card p-4 shadow-sm">
+                <div class="icon-box bg-mirage-light">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <h3 class="h5 fw-bold" style="color: var(--mirage);">Servicio Superior</h3>
+                <p class="text-muted small mb-4">Monitorea el estado de las entregas y optimiza la rotación de tus mesas.</p>
+                <span class="text-muted small italic">Mejora continua en cada plato.</span>
+            </div>
+        </div>
     </div>
 </div>
-{% endblock %}
 
+{% endblock %}

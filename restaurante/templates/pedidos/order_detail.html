@@ -1,49 +1,152 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1>Detalle del Pedido #{{ pedido.id }}</h1>
+<style>
+    .detail-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+    
+    .detail-header {
+        background-color: var(--mirage);
+        color: white;
+        padding: 20px;
+    }
 
-<div class="mb-3">
-  <strong>Fecha:</strong> {{ pedido.fecha|date:"d/m/Y H:i" }}<br>
-  <strong>Tipo:</strong> {{ pedido.get_tipo_display }}<br>
-  {% if pedido.tipo == 'MESA' %}
-    <strong>Mesa:</strong> {{ pedido.mesa }}<br>
-  {% endif %}
-  <strong>Cliente:</strong> {{ pedido.cliente_nombre|default:"-" }}<br>
-  
-</div>
+    .info-label {
+        color: var(--deep-sea-green);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+        margin-bottom: 2px;
+    }
 
-<h4>Productos</h4>
+    .info-value {
+        color: var(--mirage);
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin-bottom: 15px;
+    }
 
-<table class="table table-bordered table-sm">
-  <thead class="table-light">
-    <tr>
-      <th>Producto</th>
-      <th>Cantidad</th>
-      <th>Precio unitario</th>
-      <th>Subtotal</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for detalle in pedido.detalles.all %}
-      <tr>
-        <td>{{ detalle.producto.nombre }}</td>
-        <td>{{ detalle.cantidad }}</td>
-        <td>{{ detalle.precio_unitario }} Bs.</td>
-        <td>{{ detalle.subtotal }} Bs.</td>
-      </tr>
-    {% endfor %}
-  </tbody>
-  <tfoot>
-    <tr>
-      <td colspan="3" class="text-end fw-bold">TOTAL:</td>
-      <td class="fw-bold">{{ pedido.total }} Bs.</td>
-    </tr>
-  </tfoot>
-</table>
+    .table-detail thead {
+        background-color: var(--wild-sand);
+        border-bottom: 2px solid var(--deep-sea-green);
+    }
 
-<a href="{% url 'lista_pedidos' %}" class="btn btn-secondary">
-  <i class="bi bi-arrow-left"></i> Volver a pedidos
+    .table-detail th {
+        color: var(--deep-sea-green);
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        padding: 12px;
+    }
+
+    .total-section {
+        background-color: var(--wild-sand);
+        border-top: 3px solid var(--blaze-orange);
+        padding: 20px;
+    }
+
+    .total-amount {
+        color: var(--blaze-orange);
+        font-size: 2rem;
+        font-weight: 800;
+    }
+
+    .badge-tipo {
+        background-color: var(--deep-sea-green);
+        padding: 8px 15px;
+        border-radius: 50px;
+    }
+</style>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            
+            <div class="mb-4">
+                <a href="{% url 'lista_pedidos' %}" class="btn btn-link text-decoration-none p-0" style="color: var(--deep-sea-green);">
+                    <i class="bi bi-arrow-left-circle-fill fs-5 me-2"></i> Volver al listado
+                </a>
+            </div>
+
+            <div class="card detail-card">
+                <div class="detail-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0 fw-bold">Pedido #{{ pedido.id }}</h3>
+                        <small class="opacity-75"><i class="bi bi-calendar3 me-1"></i> {{ pedido.fecha|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    <span class="badge badge-tipo">
+                        <i class="bi {% if pedido.tipo == 'MESA' %}bi-tablet-landscape{% else %}bi-bag{% endif %} me-2"></i>
+                        {{ pedido.get_tipo_display }}
+                    </span>
+                </div>
+
+                <div class="card-body p-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="info-label">Cliente</div>
+                            <div class="info-value">{{ pedido.cliente_nombre|default:"Consumidor Final" }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            {% if pedido.tipo == 'MESA' %}
+                                <div class="info-label">Mesa Asignada</div>
+                                <div class="info-value"><span class="text-primary fw-bold">Número {{ pedido.mesa }}</span></div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold mb-3" style="color: var(--mirage);">Resumen de Consumo</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-detail align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-center">Cant.</th>
+                                    <th class="text-end">P. Unitario</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for detalle in pedido.detalles.all %}
+                                <tr>
+                                    <td class="fw-medium text-dark">{{ detalle.producto.nombre }}</td>
+                                    <td class="text-center">
+                                        <span class="badge rounded-pill bg-light text-dark border">{{ detalle.cantidad }}</span>
+                                    </td>
+                                    <td class="text-end text-muted">{{ detalle.precio_unitario }} Bs.</td>
+                                    <td class="text-end fw-bold" style="color: var(--deep-sea-green);">{{ detalle.subtotal }} Bs.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="total-section d-flex justify-content-between align-items-center">
+                    <div class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i> Precios expresados en Bolivianos (Bs.)
+                    </div>
+                    <div class="text-end">
+                        <div class="info-label mb-0" style="color: var(--mirage);">Total a Pagar</div>
+                        <div class="total-amount">{{ pedido.total }} Bs.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2 justify-content-end">
+                <a href="{% url 'exportar_ticket_pdf' pedido.id %}" target="_blank" class="btn btn-dark shadow-sm px-4">
+    <i class="bi bi-printer-fill me-2"></i> Previsualizar e Imprimir Ticket
 </a>
+                <a href="{% url 'crear_pedido' %}" class="btn btn-orange px-4 text-white" style="background-color: var(--blaze-orange);">
+                    <i class="bi bi-plus-lg me-2"></i> Nuevo Pedido
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
 
 {% endblock %}

@@ -1,10 +1,13 @@
 from django.urls import path
 from . import views
+from django.conf import settings
+from django.conf.urls.static import static
 
 
 
 urlpatterns = [
-    path('', views.home, name='home'),
+    path('', views.login_view, name='login'),
+    path('dashboard/', views.home, name='home'),
     # Categorías
     path('categorias/', views.lista_categorias, name='lista_categorias'),
     path('categorias/crear/', views.crear_categoria, name='crear_categoria'),
@@ -22,4 +25,5 @@ urlpatterns = [
     path('nuevo/', views.crear_pedido, name='crear_pedido'),
     path('<int:pk>/', views.detalle_pedido, name='detalle_pedido'),
     path('pedidos/<int:pk>/cambiar_estado/', views.cambiar_estado_pedido, name='cambiar_estado_pedido'),
-]
+    path('pedido/<int:pk>/ticket-pdf/', views.exportar_ticket_pdf, name='exportar_ticket_pdf'),
+]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -1,0 +1,178 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenido | El Porteño Varador</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --mirage: #16232A;
+            --blaze-orange: #FF5B04;
+            --deep-sea-green: #075056;
+        }
+        
+        body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
+
+        .hero-split { min-height: 100vh; }
+
+        /* Contenedor de la imagen */
+        .hero-container {
+            position: relative;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* La imagen real */
+        .hero-container img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        /* Capa de superposición (Oscurece la imagen para que el texto se lea) */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(22, 35, 42, 0.9) 0%, rgba(7, 80, 86, 0.6) 100%);
+            z-index: 2;
+        }
+
+        /* Contenido sobre la imagen */
+        .hero-content {
+            position: relative;
+            z-index: 3;
+            color: white;
+            padding: 60px;
+        }
+
+        .login-column {
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .login-card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .btn-login {
+            background-color: var(--blaze-orange);
+            color: white;
+            border: none;
+            font-weight: bold;
+            padding: 12px;
+            transition: 0.3s;
+        }
+
+        .btn-login:hover { background-color: #e04a00; color: white; }
+        
+        .accent-line {
+            width: 60px;
+            height: 4px;
+            background-color: var(--blaze-orange);
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid p-0">
+    <div class="row g-0 hero-split">
+        
+        <div class="col-lg-7 hero-container d-none d-lg-flex">
+            <img src="{% static 'img/p1.jpg' %}" alt="Restaurante El Porteño">
+            
+            <div class="overlay"></div>
+            
+            <div class="hero-content">
+                <div class="accent-line"></div>
+                <h1 class="display-2 fw-bold mb-3">El Porteño Varador</h1>
+                <p class="fs-4 opacity-75 mb-4">Sabor auténtico y gestión impecable. Bienvenido al centro de control de servicio.</p>
+                <div class="d-flex gap-3">
+                    <span class="badge rounded-pill bg-light text-dark px-3 py-2">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>Calidad Porteña
+                    </span>
+                    <span class="badge rounded-pill border border-light text-white px-3 py-2">
+                        <i class="bi bi-shield-lock me-2"></i>Acceso Seguro
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5 login-column">
+            <div class="w-100 p-3">
+                <div class="text-center mb-5">
+                    <h2 class="fw-bold" style="color: var(--mirage);">Acceso al Sistema</h2>
+                    <p class="text-muted">Panel Administrativo</p>
+                </div>
+
+                <div class="card login-card p-4 mx-auto">
+                    <div id="error-msg" class="alert alert-danger d-none small">
+                        <i class="bi bi-exclamation-triangle me-2"></i> Usuario o clave incorrectos
+                    </div>
+
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Usuario</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i class="bi bi-person"></i></span>
+                                <input type="text" id="user" class="form-control bg-light border-0" placeholder="Nombre de usuario" required>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold">Contraseña</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i class="bi bi-lock"></i></span>
+                                <input type="password" id="pass" class="form-control bg-light border-0" placeholder="••••••" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-login w-100 rounded-pill shadow-sm">
+                            Iniciar Sesión <i class="bi bi-arrow-right ms-2"></i>
+                        </button>
+                    </form>
+                </div>
+                <p class="text-center mt-5 text-muted small">
+                    ©  El Porteño Varador
+                </p>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const user = document.getElementById('user').value;
+        const pass = document.getElementById('pass').value;
+        const errorMsg = document.getElementById('error-msg');
+
+        if (user === 'Admin' && pass === '123') {
+            localStorage.setItem('isLoggedIn', 'true');
+            window.location.href = "{% url 'home' %}";
+        } else {
+            errorMsg.classList.remove('d-none');
+            setTimeout(() => errorMsg.classList.add('d-none'), 3000);
+        }
+    });
+</script>
+
+</body>
+</html>

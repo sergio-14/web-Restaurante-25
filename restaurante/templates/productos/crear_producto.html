@@ -1,28 +1,131 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1>{% if is_editing %}Editar Producto: {{ producto.nombre }}{% else %}Crear Producto{% endif %}</h1>
+<style>
+    .form-container {
+        width: 600px;
+        margin: 2rem auto;
+    }
 
-<form method="post">
-    {% csrf_token %}
-    
-    {{ form.as_p }}
-    
-    <div class="d-flex gap-2 mt-4">
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-save"></i> Guardar Cambios
-        </button>
-        
-        <a href="{% url 'lista_productos' %}" class="btn btn-secondary">
-            Cancelar
-        </a>
-        
-        {% if is_editing %}
-            <a href="{% url 'eliminar_producto' producto.pk %}" class="btn btn-danger ms-auto">
-                <i class="bi bi-trash"></i> Eliminar Producto
-            </a>
-        {% endif %}
+    .card-custom {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .card-header-custom {
+        background-color: var(--mirage);
+        color: white;
+        border-radius: 15px 15px 0 0 !important;
+        padding: 1.5rem;
+    }
+
+    .title-accent {
+        border-left: 4px solid var(--blaze-orange);
+        padding-left: 12px;
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+    }
+
+    /* Estilo para los campos de Django */
+    .form-body label {
+        color: var(--deep-sea-green);
+        font-weight: 600;
+        margin-bottom: 5px;
+        display: block;
+    }
+
+    .form-body input, .form-body select, .form-body textarea {
+        width: 100%;
+        padding: 10px 15px;
+        border: 2px solid var(--wild-sand);
+        border-radius: 8px;
+        transition: all 0.3s;
+        margin-bottom: 1rem;
+    }
+
+    .form-body input:focus, .form-body select:focus {
+        outline: none;
+        border-color: var(--deep-sea-green);
+        box-shadow: 0 0 0 3px rgba(7, 80, 86, 0.1);
+    }
+
+    .btn-save {
+        background-color: var(--blaze-orange);
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        font-weight: 600;
+    }
+
+    .btn-save:hover {
+        background-color: #e04a00;
+        color: white;
+    }
+
+    .helptext {
+        font-size: 0.8rem;
+        color: #6c757d;
+        display: block;
+        margin-top: -0.5rem;
+        margin-bottom: 1rem;
+    }
+</style>
+
+<div class="form-container">
+    <div class="card card-custom">
+        <div class="card-header card-header-custom">
+            <h1 class="title-accent">
+                {% if is_editing %}
+                    <i class="bi bi-pencil-square"></i> Editar Producto: {{ producto.nombre }}
+                {% else %}
+                    <i class="bi bi-plus-circle-fill"></i> Crear Nuevo Producto
+                {% endif %}
+            </h1>
+        </div>
+
+        <div class="card-body p-4 form-body">
+            <form method="post" novalidate>
+                {% csrf_token %}
+                
+                {# Renderizado manual para mejor control visual #}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <small class="helptext">{{ field.help_text }}</small>
+                        {% endif %}
+                        {% if field.errors %}
+                            {% for error in field.errors %}
+                                <div class="text-danger small fw-bold mt-1">
+                                    <i class="bi bi-exclamation-triangle"></i> {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <div class="d-flex flex-wrap gap-2 mt-4 pt-3 border-top">
+                    <button type="submit" class="btn btn-save shadow-sm">
+                        <i class="bi bi-save me-1"></i> 
+                        {% if is_editing %}Actualizar Producto{% else %}Registrar Producto{% endif %}
+                    </button>
+                    
+                    <a href="{% url 'lista_productos' %}" class="btn btn-light border px-4">
+                        Cancelar
+                    </a>
+                    
+                    {% if is_editing %}
+                        <a href="{% url 'eliminar_producto' producto.pk %}" class="btn btn-outline-danger ms-auto">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
     </div>
-</form>
+</div>
 
 {% endblock %}

@@ -1,134 +1,224 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1>Crear Pedido</h1>
+<style>
+    :root {
+        --mirage: #16232A;
+        --blaze-orange: #FF5B04;
+        --deep-sea-green: #075056;
+        --wild-sand: #E4EEF0;
+    }
+
+    .title-accent {
+        color: var(--mirage);
+        border-left: 5px solid var(--blaze-orange);
+        padding-left: 15px;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header-custom {
+        background-color: var(--wild-sand);
+        border-bottom: 2px solid var(--deep-sea-green);
+        color: var(--mirage);
+        font-weight: bold;
+    }
+
+    .form-label {
+        color: var(--deep-sea-green);
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--blaze-orange);
+        box-shadow: 0 0 0 0.25rem rgba(255, 91, 4, 0.25);
+    }
+
+    .table-custom thead {
+        background-color: var(--mirage);
+        color: white;
+    }
+
+    .subtotal-cell {
+        font-weight: 700;
+        color: var(--deep-sea-green);
+    }
+
+    #total-general {
+        font-size: 1.5rem;
+        color: var(--blaze-orange);
+    }
+
+    .btn-add {
+        background-color: var(--deep-sea-green);
+        color: white;
+        transition: 0.3s;
+    }
+
+    .btn-add:hover {
+        background-color: var(--mirage);
+        color: white;
+    }
+
+    .btn-finish {
+        background-color: var(--blaze-orange);
+        border: none;
+        padding: 10px 25px;
+        font-weight: bold;
+    }
+
+    .btn-finish:hover {
+        background-color: #e04a00;
+    }
+
+    /* Estilo para el checkbox de eliminar */
+    .btn-check-delete:checked + .btn-outline-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+</style>
+
+<h1 class="title-accent">Registrar Nuevo Pedido</h1>
 
 {% if messages %}
-  {% for message in messages %}
-    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-      {{ message }}
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-  {% endfor %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-info-circle me-2"></i> {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
 {% endif %}
 
 <form method="post" novalidate id="pedido-form">
-  {% csrf_token %}
+    {% csrf_token %}
 
-  <div class="row mb-3">
-    <div class="col-md-3">
-      {{ form.tipo.label_tag }}
-      {{ form.tipo }}
-      {% if form.tipo.errors %}<div class="text-danger">{{ form.tipo.errors }}</div>{% endif %}
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header card-header-custom">
+            <i class="bi bi-info-square me-2"></i> Datos del Pedido
+        </div>
+        <div class="card-body bg-white">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">{{ form.tipo.label }}</label>
+                    {{ form.tipo }}
+                    {% if form.tipo.errors %}<div class="text-danger small">{{ form.tipo.errors }}</div>{% endif %}
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">{{ form.estado.label }}</label>
+                    {{ form.estado }}
+                    {% if form.estado.errors %}<div class="text-danger small">{{ form.estado.errors }}</div>{% endif %}
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">{{ form.mesa.label }}</label>
+                    {{ form.mesa }}
+                    {% if form.mesa.errors %}<div class="text-danger small">{{ form.mesa.errors }}</div>{% endif %}
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">{{ form.cliente_nombre.label }}</label>
+                    {{ form.cliente_nombre }}
+                    {% if form.cliente_nombre.errors %}<div class="text-danger small">{{ form.cliente_nombre.errors }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="col-md-3">
-      {{ form.estado.label_tag }}
-      {{ form.estado }}
-      {% if form.estado.errors %}<div class="text-danger">{{ form.estado.errors }}</div>{% endif %}
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-cart4 me-2"></i> Detalles de la Comanda</span>
+            <span class="badge bg-secondary text-white fw-normal">Mínimo 1 producto</span>
+        </div>
+        <div class="card-body p-0">
+            {{ formset.management_form }}
+            {% if formset.non_form_errors %}
+                <div class="alert alert-danger m-3">{{ formset.non_form_errors }}</div>
+            {% endif %}
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 table-custom" id="detalles-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40%;" class="ps-4">Producto</th>
+                            <th style="width: 15%;">Cantidad</th>
+                            <th style="width: 15%;">Precio Unit.</th>
+                            <th style="width: 15%;">Subtotal</th>
+                            <th style="width: 15%;" class="text-center">Quitar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detalles-tbody">
+                        {% for form in formset %}
+                        <tr class="detalle-row" data-form-index="{{ forloop.counter0 }}">
+                            <td class="ps-4">
+                                {{ form.id }}
+                                <select name="{{ form.producto.html_name }}" class="form-select producto-select">
+                                    <option value="">Seleccione un producto...</option>
+                                    {% for p in productos %}
+                                        <option value="{{ p.id }}" data-precio="{{ p.precio }}"
+                                            {% if form.producto.value|stringformat:"s" == p.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ p.nombre }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>{{ form.cantidad }}</td>
+                            <td>{{ form.precio_unitario }}</td>
+                            <td class="subtotal-cell">Bs. 0.00</td>
+                            <td class="text-center">
+                                <div class="form-check d-flex justify-content-center">
+                                    {{ form.DELETE }}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-light d-flex justify-content-between align-items-center p-3">
+            <button type="button" class="btn btn-add" id="add-product">
+                <i class="bi bi-plus-circle me-1"></i> Añadir Línea
+            </button>
+            <div class="text-end">
+                <span class="text-muted me-2">TOTAL A PAGAR:</span>
+                <span id="total-general" class="fw-bold">Bs. 0.00</span>
+            </div>
+        </div>
     </div>
 
-    <div class="col-md-3">
-      {{ form.mesa.label_tag }}
-      {{ form.mesa }}
-      {% if form.mesa.errors %}<div class="text-danger">{{ form.mesa.errors }}</div>{% endif %}
+    <div class="d-flex gap-3 mb-5">
+        <button type="submit" class="btn btn-primary btn-finish shadow">
+            <i class="bi bi-check2-all me-1"></i> GUARDAR PEDIDO
+        </button>
+        <a href="{% url 'lista_pedidos' %}" class="btn btn-outline-secondary px-4">
+            Volver al listado
+        </a>
     </div>
-
-    <div class="col-md-3">
-      {{ form.cliente_nombre.label_tag }}
-      {{ form.cliente_nombre }}
-      {% if form.cliente_nombre.errors %}<div class="text-danger">{{ form.cliente_nombre.errors }}</div>{% endif %}
-    </div>
-  </div>
-
-  <h4>Detalles del Pedido</h4>
-  <p class="text-muted">Complete al menos un producto para registrar la venta</p>
-
-  {{ formset.management_form }}
-
-  {% if formset.non_form_errors %}
-    <div class="alert alert-danger">{{ formset.non_form_errors }}</div>
-  {% endif %}
-
-  <table class="table table-sm table-bordered" id="detalles-table">
-    <thead class="table-light">
-      <tr>
-        <th style="width: 40%;">Producto</th>
-        <th style="width: 15%;">Cantidad</th>
-        <th style="width: 15%;">Precio unitario</th>
-        <th style="width: 15%;">Subtotal</th>
-        <th style="width: 15%;">Eliminar</th>
-      </tr>
-    </thead>
-    <tbody id="detalles-tbody">
-      {% for form in formset %}
-        <tr class="detalle-row" data-form-index="{{ forloop.counter0 }}">
-          <td>
-            {{ form.id }}
-            <select name="{{ form.producto.html_name }}" id="id_{{ form.producto.html_name }}" class="form-control producto-select">
-              <option value="">---------</option>
-              {% for p in productos %}
-                <option value="{{ p.id }}" data-precio="{{ p.precio }}"
-                  {% if form.producto.value|stringformat:"s" == p.id|stringformat:"s" %}selected{% endif %}>
-                  {{ p.nombre }} — {{ p.precio }} Bs.
-                </option>
-              {% endfor %}
-            </select>
-            {% if form.producto.errors %}<div class="text-danger small">{{ form.producto.errors }}</div>{% endif %}
-          </td>
-          <td>
-            {{ form.cantidad }}
-            {% if form.cantidad.errors %}<div class="text-danger small">{{ form.cantidad.errors }}</div>{% endif %}
-          </td>
-          <td>
-            {{ form.precio_unitario }}
-            {% if form.precio_unitario.errors %}<div class="text-danger small">{{ form.precio_unitario.errors }}</div>{% endif %}
-          </td>
-          <td class="subtotal-cell align-middle">Bs0.00</td>
-          <td class="text-center">{{ form.DELETE }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-    <tfoot>
-      <tr>
-        <td colspan="3" class="text-end fw-bold">TOTAL:</td>
-        <td colspan="2" class="fw-bold" id="total-general">Bs0.00</td>
-      </tr>
-    </tfoot>
-  </table>
-
-  <button type="button" class="btn btn-success mb-3" id="add-product">
-    <i class="bi bi-plus-circle"></i> Agregar producto
-  </button>
-
-  <div class="d-flex gap-2">
-    <button type="submit" class="btn btn-primary">
-      <i class="bi bi-check-circle"></i> Finalizar venta
-    </button>
-    <a href="{% url 'lista_pedidos' %}" class="btn btn-secondary">Cancelar</a>
-  </div>
 </form>
 
-<!-- Fila vacía oculta para JS — usa formset.prefix para mantener consistencia -->
 <table style="display:none">
-  <tbody>
-    <tr id="empty-row" class="detalle-row">
-      <td>
-        <input type="hidden" name="{{ formset.prefix }}-__prefix__-id" id="id_{{ formset.prefix }}-__prefix__-id" value="">
-        <select name="{{ formset.prefix }}-__prefix__-producto" id="id_{{ formset.prefix }}-__prefix__-producto" class="form-control producto-select">
-          <option value="">---------</option>
-          {% for p in productos %}
-            <option value="{{ p.id }}" data-precio="{{ p.precio }}">{{ p.nombre }} — {{ p.precio }} Bs.</option>
-          {% endfor %}
-        </select>
-      </td>
-      <td><input type="number" name="{{ formset.prefix }}-__prefix__-cantidad" id="id_{{ formset.prefix }}-__prefix__-cantidad" class="form-control" min="1" value="1"></td>
-      <td><input type="number" name="{{ formset.prefix }}-__prefix__-precio_unitario" id="id_{{ formset.prefix }}-__prefix__-precio_unitario" class="form-control" step="0.01" value="0"></td>
-      <td class="subtotal-cell align-middle">Bs0.00</td>
-      <td class="text-center"><input type="checkbox" name="{{ formset.prefix }}-__prefix__-DELETE" id="id_{{ formset.prefix }}-__prefix__-DELETE"></td>
-    </tr>
-  </tbody>
+    <tbody>
+        <tr id="empty-row" class="detalle-row">
+            <td class="ps-4">
+                <input type="hidden" name="{{ formset.prefix }}-__prefix__-id">
+                <select name="{{ formset.prefix }}-__prefix__-producto" class="form-select producto-select">
+                    <option value="">Seleccione un producto...</option>
+                    {% for p in productos %}
+                        <option value="{{ p.id }}" data-precio="{{ p.precio }}">{{ p.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td><input type="number" name="{{ formset.prefix }}-__prefix__-cantidad" class="form-control" min="1" value="1"></td>
+            <td><input type="number" name="{{ formset.prefix }}-__prefix__-precio_unitario" class="form-control" step="0.01" value="0"></td>
+            <td class="subtotal-cell">Bs. 0.00</td>
+            <td class="text-center"><input type="checkbox" name="{{ formset.prefix }}-__prefix__-DELETE" class="form-check-input"></td>
+        </tr>
+    </tbody>
 </table>
+
+
 
 <script>
 

@@ -152,36 +152,105 @@ def cambiar_estado_pedido(request, pk):
 
     return redirect('lista_pedidos')
 
+# views.py
 def detalle_pedido(request, pk):
     pedido = get_object_or_404(Pedido, pk=pk)
+    # Si es una petición AJAX, devolvemos un template pequeño sin el "extends base.html"
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return render(request, 'pedidos/includes/modal_detalle_body.html', {'pedido': pedido})
+    # Si entran directo por URL, se ve la página normal
     return render(request, 'pedidos/order_detail.html', {'pedido': pedido})
 
 
 from django.db.models import F, Sum, DecimalField 
 from .models import Pedido 
 
+from django.utils import timezone
+from django.db.models import Sum
+from datetime import datetime, time
+
 def lista_pedidos(request):
+    # Captura de parámetros de la URL
     estado_filtro = request.GET.get('estado')
+    tipo_filtro = request.GET.get('tipo')
+    fecha_desde = request.GET.get('desde')
+    fecha_hasta = request.GET.get('hasta')
+    solo_hoy = request.GET.get('hoy') == 'true'
     
     qs = Pedido.objects.all().order_by('-fecha')
     
+    # --- FILTROS DE FECHA ---
+    if solo_hoy:
+        hoy = timezone.now().date()
+        # Filtramos desde las 00:00:00 hasta las 23:59:59 de hoy
+        qs = qs.filter(fecha__date=hoy)
+    elif fecha_desde and fecha_hasta:
+        # Filtro por rango de fechas (Desde - Hasta)
+        qs = qs.filter(fecha__date__range=[fecha_desde, fecha_hasta])
+
+    # --- FILTRO POR ESTADO ---
     if estado_filtro and estado_filtro != 'TODOS':
         qs = qs.filter(estado=estado_filtro)
+
+    # --- FILTRO POR TIPO (Mesa / Llevar) ---
+    if tipo_filtro and tipo_filtro != 'TODOS':
+        qs = qs.filter(tipo=tipo_filtro)
     
     total_registros = qs.count()
 
-    ganancia_total = sum(pedido.total for pedido in qs)
+    # Calculamos la ganancia total de los registros filtrados
+    # Usamos aggregate para que la base de datos haga el trabajo pesado
+    resultado_ganancia = sum(pedido.total for pedido in qs) # Si 'total' es @property
+    # Si 'total' fuera un campo en BD usaríamos: qs.aggregate(Sum('total'))['total__sum']
 
-    
     context = {
         'pedidos': qs,
         'estados_choices': Pedido.Estado.choices,
-        'estado_seleccionado': estado_filtro if estado_filtro else 'TODOS',
+        'tipos_choices': Pedido.TipoPedido.choices,
+        'estado_seleccionado': estado_filtro or 'TODOS',
+        'tipo_seleccionado': tipo_filtro or 'TODOS',
+        'fecha_desde': fecha_desde,
+        'fecha_hasta': fecha_hasta,
+        'es_hoy': solo_hoy,
         'total_registros': total_registros,
-        'ganancia_total': ganancia_total, 
+        'ganancia_total': resultado_ganancia, 
     }
     return render(request, 'pedidos/listar_pedidos.html', context)
 
+def login_view(request):
+    return render(request, 'login.html')
 
 def home(request):
     return render(request, 'dashboard.html')
+
+
+
+from django.shortcuts import get_object_or_404
+from django.http import HttpResponse
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from .models import Pedido
+
+def exportar_ticket_pdf(request, pk):
+    pedido = get_object_or_404(Pedido, pk=pk)
+    template_path = 'pedidos/ticket_pdf.html'
+    context = {'pedido': pedido}
+    
+    # Creamos el objeto de respuesta de Django y definimos el tipo de contenido como PDF
+    response = HttpResponse(content_type='application/pdf')
+    
+    # 'inline' hace que se abra en el navegador. 'attachment' obligaría a la descarga.
+    response['Content-Disposition'] = f'inline; filename="ticket_{pedido.id}.pdf"'
+    
+    # Buscamos el template y lo renderizamos con el contexto
+    template = get_template(template_path)
+    html = template.render(context)
+
+    # Creamos el PDF
+    pisa_status = pisa.CreatePDF(html, dest=response)
+    
+    # Si hay errores, los mostramos
+    if pisa_status.err:
+       return HttpResponse('Error al generar el ticket <pre>' + html + '</pre>')
+    
+    return response

@@ -1,28 +1,84 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Categorías</h1>
-<a href="{% url 'crear_categoria' %}" class="btn btn-primary mb-3">Nueva Categoría</a>
 
-<table class="table table-striped table-bordered">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Descripción</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for cat in categorias %}
-        <tr>
-            <td>{{ cat.id }}</td>
-            <td>{{ cat.nombre }}</td>
-            <td>{{ cat.descripcion|default:"-" }}</td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="3" class="text-center text-muted">No hay categorías</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<style>
+    .title-accent {
+        color: var(--mirage);
+        border-left: 5px solid var(--deep-sea-green);
+        padding-left: 15px;
+        font-weight: 700;
+    }
+
+    .btn-sea {
+        background-color: var(--deep-sea-green);
+        color: white;
+        border: none;
+        transition: 0.3s;
+    }
+
+    .btn-sea:hover {
+        background-color: #053a3e;
+        color: white;
+    }
+
+    .custom-table thead {
+        background-color: var(--mirage);
+        color: white;
+    }
+
+    .cat-name {
+        color: var(--deep-sea-green);
+        font-weight: 600;
+    }
+</style>
+
+<div class="row align-items-center mb-4">
+    <div class="col-md-6">
+        <h1 class="title-accent m-0">Categorías de Menú</h1>
+    </div>
+    <div class="col-md-6 text-md-end mt-3 mt-md-0">
+        <a href="{% url 'crear_categoria' %}" class="btn btn-sea px-4 shadow-sm">
+            <i class="bi bi-folder-plus me-2"></i>Nueva Categoría
+        </a>
+    </div>
+</div>
+
+<div class="table-responsive shadow-sm rounded">
+    <table class="table table-hover align-middle bg-white mb-0">
+        <thead class="custom-table thead">
+            <tr>
+                <th class="ps-4 py-3">ID</th>
+                <th class="py-3">Nombre de Categoría</th>
+                <th class="py-3">Descripción</th>
+                <th class="py-3 text-center">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cat in categorias %}
+            <tr>
+                <td class="ps-4 text-muted">#{{ cat.id }}</td>
+                <td>
+                    <span class="cat-name fs-5">{{ cat.nombre }}</span>
+                </td>
+                <td>
+                    <span class="text-secondary italic">{{ cat.descripcion|default:"Sin descripción" }}</span>
+                </td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-secondary border-0" title="Ver productos de esta categoría">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center py-5">
+                    <i class="bi bi-tags fs-1 d-block text-muted mb-2"></i>
+                    <p class="text-muted">No hay categorías registradas aún.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
 {% endblock %}

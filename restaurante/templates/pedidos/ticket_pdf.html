@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: 80mm 200mm; /* Formato largo para ticketera */
+            margin: 2mm;
+        }
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 10pt;
+            color: #16232A; /* Mirage */
+            margin: 0;
+            padding: 0;
+        }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .fw-bold { font-weight: bold; }
+        
+        .header {
+            border-bottom: 1px dashed #075056;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        .restaurant-name {
+            font-size: 16pt;
+            color: #FF5B04; /* Blaze Orange */
+            margin-bottom: 2px;
+        }
+        .ticket-info {
+            width: 100%;
+            font-size: 9pt;
+            margin-bottom: 10px;
+        }
+        .table-items {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table-items th {
+            border-bottom: 1px solid #16232A;
+            font-size: 8pt;
+            text-align: left;
+            padding-bottom: 3px;
+        }
+        .table-items td {
+            padding: 5px 0;
+            font-size: 9pt;
+            vertical-align: top;
+        }
+        .total-box {
+            margin-top: 10px;
+            border-top: 2px solid #FF5B04;
+            padding-top: 8px;
+        }
+        .total-amount {
+            font-size: 14pt;
+            color: #FF5B04;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 8pt;
+            border-top: 1px solid #E4EEF0;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header text-center">
+        <div class="restaurant-name fw-bold">El Porteño Restauran</div>
+        <div>NIT: 123456789 | Cel: 70012345</div>
+        <div>El Varador Frente al puerto de carga  #456</div>
+       
+    </div>
+
+    <table class="ticket-info">
+        <tr>
+            <td><strong>PEDIDO:</strong> #{{ pedido.id }}</td>
+            <td class="text-right">{{ pedido.fecha|date:"d/m/Y H:i" }}</td>
+        </tr>
+        <tr>
+            <td><strong>TIPO:</strong> {{ pedido.get_tipo_display }}</td>
+            <td class="text-right">{% if pedido.mesa %}Mesa: {{ pedido.mesa }}{% endif %}</td>
+        </tr>
+        <tr>
+            <td colspan="2"><strong>CLIENTE:</strong> {{ pedido.cliente_nombre|default:"Consumidor Final" }}</td>
+        </tr>
+    </table>
+
+    <table class="table-items">
+        <thead>
+            <tr>
+                <th style="width: 15%;">CT.</th>
+                <th style="width: 55%;">DETALLE</th>
+                <th style="width: 30%; text-align: right;">SUBT.</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detalle in pedido.detalles.all %}
+            <tr>
+                <td>{{ detalle.cantidad }}</td>
+                <td>{{ detalle.producto.nombre }}</td>
+                <td class="text-right">{{ detalle.subtotal }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="total-box">
+        <table style="width: 100%;">
+            <tr>
+                <td class="fw-bold">TOTAL A PAGAR:</td>
+                <td class="text-right fw-bold total-amount">Bs. {{ pedido.total }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer text-center">
+        <p>¡Gracias por su visita!</p>
+        <p>Conserve su ticket para cualquier reclamo.</p>
+    </div>
+</body>
+</html>
