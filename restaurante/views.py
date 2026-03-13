@@ -170,39 +170,37 @@ from django.db.models import Sum
 from datetime import datetime, time
 
 def lista_pedidos(request):
-    # Captura de parámetros de la URL
+  
     estado_filtro = request.GET.get('estado')
     tipo_filtro = request.GET.get('tipo')
     fecha_desde = request.GET.get('desde')
     fecha_hasta = request.GET.get('hasta')
     solo_hoy = request.GET.get('hoy') == 'true'
-    
+   
     qs = Pedido.objects.all().order_by('-fecha')
     
-    # --- FILTROS DE FECHA ---
     if solo_hoy:
         hoy = timezone.now().date()
-        # Filtramos desde las 00:00:00 hasta las 23:59:59 de hoy
+       
         qs = qs.filter(fecha__date=hoy)
     elif fecha_desde and fecha_hasta:
-        # Filtro por rango de fechas (Desde - Hasta)
+      
         qs = qs.filter(fecha__date__range=[fecha_desde, fecha_hasta])
 
-    # --- FILTRO POR ESTADO ---
     if estado_filtro and estado_filtro != 'TODOS':
         qs = qs.filter(estado=estado_filtro)
 
-    # --- FILTRO POR TIPO (Mesa / Llevar) ---
     if tipo_filtro and tipo_filtro != 'TODOS':
         qs = qs.filter(tipo=tipo_filtro)
     
     total_registros = qs.count()
 
-    # Calculamos la ganancia total de los registros filtrados
-    # Usamos aggregate para que la base de datos haga el trabajo pesado
-    resultado_ganancia = sum(pedido.total for pedido in qs) # Si 'total' es @property
-    # Si 'total' fuera un campo en BD usaríamos: qs.aggregate(Sum('total'))['total__sum']
-
+    pedidos_entregados = qs.filter(estado='ENTREGADO')
+    
+   
+    ganancia_solo_entregados = sum(p.total for p in pedidos_entregados)
+    
+   
     context = {
         'pedidos': qs,
         'estados_choices': Pedido.Estado.choices,
@@ -213,8 +211,9 @@ def lista_pedidos(request):
         'fecha_hasta': fecha_hasta,
         'es_hoy': solo_hoy,
         'total_registros': total_registros,
-        'ganancia_total': resultado_ganancia, 
+        'ganancia_total': ganancia_solo_entregados, 
     }
+    
     return render(request, 'pedidos/listar_pedidos.html', context)
 
 def login_view(request):
